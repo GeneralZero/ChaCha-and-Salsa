@@ -72,7 +72,7 @@ def hsalsa_key_generation(iv, key):
 	'''
 	|"expa"|Key   |Key   |Key   |
 	|Key   |"nd 3"|Nonce |Nonce |
-	|Pos.  |Pos.  |"2-by"|Key   |
+	|Nonce |Nonce |"2-by"|Key   |
 	|Key   |Key   |Key   |"te k"|
 	'''
 
@@ -118,8 +118,6 @@ def chacha_quarter_round(a,b,c,d):
 
 
 def hchacha_key_schedule(key_input, rounds=20):
-	#print(f"Intial State: {key_input}")
-
 	temp_round = copy(key_input)
 
 	#Do 10 Rounds of both rows and diagonals
@@ -138,12 +136,10 @@ def hchacha_key_schedule(key_input, rounds=20):
 		temp_round[2], temp_round[7], temp_round[8],  temp_round[13] = chacha_quarter_round(temp_round[2], temp_round[7], temp_round[8],  temp_round[13])
 		temp_round[3], temp_round[4], temp_round[9],  temp_round[14] = chacha_quarter_round(temp_round[3], temp_round[4], temp_round[9],  temp_round[14])
 
-	#print(f"Full Subkey: {temp_round}")
+	#Take the first Row and the last row to be used for the subkey
 	return intarray_to_bytes(temp_round[:4] + temp_round[-4:], 4)
 
 def hsalsa_key_schedule(key_input, rounds=20):
-	#print(f"Intial State: {key_input}")
-		
 	temp_round = copy(key_input)
 
 	#Do 10 Rounds of both rows and diagonals
@@ -161,7 +157,9 @@ def hsalsa_key_schedule(key_input, rounds=20):
 		temp_round[10], temp_round[11], temp_round[8],  temp_round[9]  = salsa_quarter_round(temp_round[10], temp_round[11], temp_round[8],  temp_round[9])
 		temp_round[15], temp_round[12], temp_round[13], temp_round[14] = salsa_quarter_round(temp_round[15], temp_round[12], temp_round[13], temp_round[14])
 
-	#print(f"Full Subkey: {intarray_to_bytes(temp_round,4).hex()}")
+	#Take the Diagonal as the first 128 bits and 6-9 as the second 128 bits
+	#The Diagonal is the "expand 16-byte k" part of the origional key_input.
+	#The 6-9 is the Nonce part of the origional key_input.
 	return intarray_to_bytes([temp_round[0], temp_round[5], temp_round[10], temp_round[15]] + temp_round[6:10], 4)
 
 def salsa_key_schedule(key_input, rounds=20):
@@ -183,7 +181,7 @@ def salsa_key_schedule(key_input, rounds=20):
 		temp_round[15], temp_round[12], temp_round[13], temp_round[14] = salsa_quarter_round(temp_round[15], temp_round[12], temp_round[13], temp_round[14])
 
 	#Add the previous key_schedule and the current temp_round 
-	#Then get only the 32bits of 
+	#Then get only the 32bits
 	for i in range(16):
 		temp_round[i] = asint32(temp_round[i] + key_input[i])
 
@@ -210,23 +208,24 @@ def chacha_key_schedule(key_input, rounds=20):
 		temp_round[3], temp_round[4], temp_round[9],  temp_round[14] = chacha_quarter_round(temp_round[3], temp_round[4], temp_round[9],  temp_round[14])
 
 	#Add the previous key_schedule and the current temp_round 
-	#Then get only the 32bits of 
+	#Then get only the 32bits
 	for i in range(16):
 		temp_round[i] = asint32(temp_round[i] + key_input[i])
 
 	return temp_round
 
 def xsalsa_encrypt(iv, key, message, rounds=20):
-	#Geneate sub key 
+	#Geneate master key to be used to create the subkey
 	master_key_input = hsalsa_key_generation(iv[:16], key)
 	#print(master_key_input, len(master_key_input))
 	master_key_schedule = bytes_to_intarray(master_key_input, 4)
 
-	#for x in master_key_schedule:
-	#	print(int_to_bytes(x).hex())
-
+	#Generate the subkey
 	sub_key = hsalsa_key_schedule(master_key_schedule, rounds)
 	print(f"SubKey: {sub_key.hex()}")
+
+	#Use the unused part of the iv with padding if nessecery
+	#Encrypt with salsa the same way as normal with the diffrent input paramaters
 	return salsa_encrypt(iv[16:24].rjust(8, b'\x00'), sub_key, message, rounds)
 
 
@@ -250,7 +249,6 @@ def salsa_encrypt(iv, key, message, rounds=20, inital_pos=0):
 		#Update the position in the key_schedule
 		key_schedule[8] = asint32((inital_pos + index + 1))
 		key_schedule[9] = asint32((inital_pos + index + 1) >> 32 )
-		#print(f"KeySchedule2: {key_schedule}")
 
 		#Convert key_input to byte string and xor against the message
 		ciphertext += shortest_xor(message_block, intarray_to_bytes(round_key, 4))
@@ -259,17 +257,17 @@ def salsa_encrypt(iv, key, message, rounds=20, inital_pos=0):
 
 
 def xchacha_encrypt(iv, key, message, rounds=20):
-	#Geneate sub key 
+	#Geneate master key to be used to create the subkey 
 	master_key_input = hchacha_key_generation(iv[:16], key)
 	#print(master_key_input, len(master_key_input))
 	master_key_schedule = bytes_to_intarray(master_key_input, 4)
 
-	#for x in master_key_schedule:
-	#	print(int_to_bytes(x).hex())
-
+	#Generate the subkey
 	sub_key = hchacha_key_schedule(master_key_schedule, rounds)
 	print(f"SubKey: {sub_key.hex()}")
 
+	#Use the unused part of the iv with padding if nessecery
+	#Encrypt with chacha the same way as normal with the diffrent input paramaters
 	return chacha_encrypt(iv[16:24].rjust(8, b'\x00'), sub_key, message, rounds)
 
 def chacha_encrypt(iv, key, message, rounds=20, inital_pos=0):
@@ -292,7 +290,6 @@ def chacha_encrypt(iv, key, message, rounds=20, inital_pos=0):
 		#Update the position in the key_schedule by adding one
 		key_schedule[12] = asint32((inital_pos + index + 1))
 		key_schedule[13] = asint32((inital_pos + index + 1) >> 32 )
-		#print(f"KeySchedule2: {key_schedule}")
 
 		#Convert key_input to byte string and xor against the message
 		ciphertext += shortest_xor(message_block, intarray_to_bytes(round_key, 4))
@@ -353,7 +350,6 @@ if __name__ == '__main__':
 	#Test XSalsa http://cr.yp.to/highspeed/naclcrypto-20090310.pdf
 	key = bytes.fromhex("1b27556473e985d462cd51197a9a46c76009549eac6474f206c4ee0844f68389")
 	iv =  bytes.fromhex("69696ee955b62b73cd62bda875fc73d68219e0036b7a0b37")
-	#plaintext = bytes.fromhex(b"Test"*30)
 	ciphertext = xsalsa_encrypt(iv, key, b"Test"*30)
 	print(f"Ciphertext: {ciphertext.hex()}")
 	#SubKey: dc908dda0b9344a953629b733820778880f3ceb421bb61b91cbd4c3e66256ce4
