@@ -1,6 +1,11 @@
 # ChaCha-and-Salsa
-A simple python implimenation of ChaCha, Salsa, XChaCha, and XSalsa.
+A simple python implimenations of 
+- ChaCha
+- Salsa
+- XChaCha
+- XSalsa
+- Poly1305
 
-Wanted to finish to understand how each of the ciphers work and how they are simular and diffrent from each other.
+While these should not be used in real world applications. Hopefully the simple implimenation and comments should let people under stand the flow of the program and how each of the implimenations work.
 
-The file contains test vectors from other inplimenations and RFCs to insure correctness.
+These Implimenations have been verified against some of the Test Vectors in the RFC's to make sure that the functions are correct.
