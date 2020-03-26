@@ -1,5 +1,5 @@
 # ChaCha-and-Salsa
-A A simple, commented and readable python implementations of 
+A simple, commented and readable python implementations of 
 - ChaCha
 - Salsa
 - XChaCha
