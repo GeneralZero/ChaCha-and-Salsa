@@ -5,6 +5,7 @@ A simple, commented and readable python implementations of
 - XChaCha
 - XSalsa
 - Poly1305
+- MD5
 
 While these should not be used in real world applications. Hopefully the simple implimenation and comments should let people under stand the flow of the program and how each of the implimenations work.
 
