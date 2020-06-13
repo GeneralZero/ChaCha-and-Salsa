@@ -61,6 +61,7 @@ def int_to_bytes(i_data, be=True):
 		return (i_data).to_bytes((i_data.bit_length() + 7) // 8, byteorder='little')
 
 def bytes_to_int(i_data, be=True):
+	#print(type(i_data))
 	if be:
 		return int.from_bytes(i_data, 'big')
 	else:
@@ -135,13 +136,19 @@ def combind_blocks(blocks):
 	return b"".join(blocks)
 
 def shift_rotate_left(number, shift, bits=32): 
-	return (number << shift)|(number >> (bits - shift)) 
+	return ((number << shift)|(number >> (bits - shift))) & (2 **(bits) -1)
 
 def shift_rotate_right(number, shift, bits=32): 
-	return (number >> shift)|(number << (bits - shift)) & (math.pow(2, bits) -1)
+	return ((number >> shift)|(number << (bits - shift))) & (2 **(bits) -1)
 
 def asint32(i):
 	return i & 0xFFFFFFFF
+
+def asint64(i):
+	return i & 0xFFFFFFFFFFFFFFFF
+
+def asint(i, bits=32):
+	return i & (2 **(bits) -1)
 
 def bytes_to_intarray(bytestring, byte_length, byte_order="little"):
 	ret = []
