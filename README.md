@@ -6,9 +6,9 @@ A simple, commented and readable python implementations of
 - XSalsa
 - Poly1305
 - MD5
-- SHA224, SHA256
-- SHA384, SHA512
-- Blake224, Blake256, Blake384, Blake512
+- SHA1
+- SHA2 (SHA224, SHA256, SHA384, SHA512)
+- Blake (Blake224, Blake256, Blake384, Blake512)
 
 While these should not be used in real world applications. Hopefully the simple implimenation and comments should let people under stand the flow of the program and how each of the implimenations work.
 
