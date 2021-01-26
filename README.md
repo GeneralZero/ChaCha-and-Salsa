@@ -11,6 +11,7 @@ A simple, commented and readable python implementations of
 - SHA3 (SHA3-224, SHA3-256, SHA3-384, SHA3-512, SHAKE-128, SHAKE-256, Keccak-224, Keccak-256, Keccak-384, Keccak-512)
 - Blake (Blake224, Blake256, Blake384, Blake512)
 - Blake2 (Blake2b, Blake2s)
+- Gimli Hash Function
 
 While these should not be used in real world applications. Hopefully the simple implimenation and comments should let people under stand the flow of the program and how each of the implimenations work.
 
