@@ -5,6 +5,7 @@ A simple, commented and readable python implementations of
 - XChaCha
 - XSalsa
 - Poly1305
+- MD2
 - MD4
 - MD5
 - SHA1
