@@ -1,4 +1,4 @@
-import base64, math
+import os, math, random, base64
 
 letter_ranking = b"zqxjkvbpygfwmucldrh snioate"
 
@@ -40,6 +40,12 @@ def fixedlen_xor(input1, input2):
 	if type(input1) == bytes or type(input1) == bytearray:
 		assert(len(input1) == len(input2))
 		return bytes([input1[i] ^ input2[i] for i in range(len(input1))])
+	elif type(input1) == str:
+		assert(len(input1) == len(input2))
+		tmp = ""
+		for index in range(len(input1)):
+			tmp += str(int(input1[index]) ^ int(input2[index]))
+		return tmp
 	else:
 		return input1 ^ input2
 
@@ -141,6 +147,9 @@ def shift_rotate_left(number, shift, bits=32):
 def shift_rotate_right(number, shift, bits=32): 
 	return ((number >> shift)|(number << (bits - shift))) & (2 **(bits) -1)
 
+def bit_not(number, bits=32): 
+	return number ^ (2 **(bits) -1)
+
 def asint32(i):
 	return i & 0xFFFFFFFF
 
@@ -152,7 +161,6 @@ def asint(i, bits=32):
 
 def bytes_to_intarray(bytestring, byte_length, byte_order="little"):
 	ret = []
-	assert len(bytestring) % (byte_length) == 0
 	for i in range(0, len(bytestring), byte_length):
 		c = bytestring[i: i+byte_length]
 		ret.append(int.from_bytes(c, byte_order))
@@ -165,3 +173,70 @@ def intarray_to_bytes(intarray, byte_length, byte_order="little"):
 		ret += (intarray[i]).to_bytes(byte_length, byteorder=byte_order)
 
 	return ret
+
+def rabinMiller(possible_prime):
+	exp = possible_prime - 1
+	t = 0
+	while exp & 1 == 0:
+		exp = exp//2
+		t +=1
+
+	for k in range(0,128,2):
+		test_number = random.randrange(2, possible_prime-1)
+		#a^s is computationally infeasible.  we need a more intelligent approach
+		#v = (a**s)%n
+		#python's core math module can do modular exponentiation
+		mod_prime = pow(test_number, exp, possible_prime) #where values are (num,exp,mod)
+		if mod_prime != 1:
+			i=0
+			while mod_prime != (possible_prime-1):
+				if i == test_number-1:
+					return False
+				else:
+					i = i+1
+					mod_prime = pow(mod_prime, 2, possible_prime)
+	return True
+
+def is_prime(possible_prime):
+	#lowPrimes is all primes (sans 2, which is covered by the bitwise and operator)
+	#under 1000. taking n modulo each lowPrime allows us to remove a huge chunk
+	#of composite numbers from our potential pool without resorting to Rabin-Miller
+	lowPrimes = [3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97
+				,101,103,107,109,113,127,131,137,139,149,151,157,163,167,173,179
+				,181,191,193,197,199,211,223,227,229,233,239,241,251,257,263,269
+				,271,277,281,283,293,307,311,313,317,331,337,347,349,353,359,367
+				,373,379,383,389,397,401,409,419,421,431,433,439,443,449,457,461
+				,463,467,479,487,491,499,503,509,521,523,541,547,557,563,569,571
+				,577,587,593,599,601,607,613,617,619,631,641,643,647,653,659,661
+				,673,677,683,691,701,709,719,727,733,739,743,751,757,761,769,773
+				,787,797,809,811,821,823,827,829,839,853,857,859,863,877,881,883
+				,887,907,911,919,929,937,941,947,953,967,971,977,983,991,997]
+	#Check If even
+	if (possible_prime & 1 != 0):
+		#Check primes under 1000
+		for p in lowPrimes:
+			if (possible_prime % p == 0):
+				return False
+		#Check rabinMiller
+		return rabinMiller(possible_prime)
+	return False
+
+def generate_probable_prime(bits=1024):
+	print("Generating a probable prime with {} bits".format(bits))
+
+	#Maximum number of attempts to get a prime number
+	max_attempts = int(100 * (math.log(bits, 2) + 1))
+
+	for x in range(max_attempts):
+		#Get X bytes of random data
+		#And Convert into an integer
+		random_int = int.from_bytes(os.urandom(bits // 8), "big")  
+
+		#Set the Highest bit of the random int
+		random_int |= (1 << bits)
+		print("-", end="", flush=True)
+
+		#Check if is prime
+		if is_prime(random_int):
+			return random_int
+	raise Exception("Could not generate Prime")
