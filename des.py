@@ -21,18 +21,18 @@ class DES():
 					 [13,2,8,4,6,15,11,1,10,9,3,14,5,0,12,7,1,15,13,8,10,3,7,4,12,5,6,11,0,14,9,2,
 					  7,11,4,1,9,12,14,2,0,6,10,13,15,3,5,8,2,1,14,7,4,10,8,13,15,12,9,0,3,5,6,11],]
 
-		self.pc1 = [56,48,40,32,24,16,8,0,57,49,41,33,25,17,9,1,58,50,42,34,26,18,10,2,59,51,43,35,
-					62,54,46,38,30,22,14,6,61,53,45,37,29,21,13,5,60,52,44,36,28,20,12,4,27,19,11,3]
+		self.pre_subkey_permutation = [56,48,40,32,24,16,8,0,57,49,41,33,25,17,9,1,58,50,42,34,26,18,10,2,59,51,43,35,
+					                   62,54,46,38,30,22,14,6,61,53,45,37,29,21,13,5,60,52,44,36,28,20,12,4,27,19,11,3]
 
-		self.pc2 = [13,16,10,23,0,4,2,27,14,5,20,9,22,18,11,3,25,7,15,6,26,19,12,1,40,51,30,36,46,54,
-					29,39,50,44,32,47,43,48,38,55,33,52,45,41,49,35,28,31]
+		self.subkey_permutation = [13,16,10,23,0,4,2,27,14,5,20,9,22,18,11,3,25,7,15,6,26,19,12,1,40,51,30,36,46,54,
+					               29,39,50,44,32,47,43,48,38,55,33,52,45,41,49,35,28,31]
 
 		self.inital_perm = [57,49,41,33,25,17,9,1,59,51,43,35,27,19,11,3,61,53,45,37,29,21,13,5,
 							63,55,47,39,31,23,15,7,56,48,40,32,24,16,8,0,58,50,42,34,26,18,10,2,
 							60,52,44,36,28,20,12,4,62,54,46,38,30,22,14,6]
 
 		self.expantion_table = [31,0,1,2,3,4,3,4,5,6,7,8,7,8,9,10,11,12,11,12,13,14,15,16,15,16,17,18,19,20,
-		19,20,21,22,23,24,23,24,25,26,27,28,27,28,29,30,31,0]
+		                        19,20,21,22,23,24,23,24,25,26,27,28,27,28,29,30,31,0]
 
 		self.sbox_perm = [15,6,19,20,28,11,27,16,0,14,22,25,4,17,30,9,1,7,23,13,31,26,2,8,18,12,29,5,21,10,3,24]
 
@@ -55,7 +55,7 @@ class DES():
 
 
 		#Permutate the key using PC1
-		for index in self.pc1:
+		for index in self.pre_subkey_permutation:
 			output_key += binary_key[index]
 
 		#Split into Left and Right
@@ -68,11 +68,11 @@ class DES():
 			#shift_rotate_left the right key
 			right_key = right_key[self.left_rotations[round_num]:] + right_key[:self.left_rotations[round_num]]
 
-			#temp full key to generate the subkey
+			#Join the keys together into a full key
 			full_key = left_key + right_key
 
 			#Create the subkeys
-			for index in self.pc2:
+			for index in self.subkey_permutation:
 				self.subkeys[round_num] += full_key[index]
 
 	def _round_opperation(self, round_key, right_message):
@@ -80,30 +80,26 @@ class DES():
 		s_box_sub = ""
 		s_box_out = ""
 
-		#Expand the message to 42 bytes
+		#Expand the message to 42 bytes using a permutation with duplicate entries 
 		for index in self.expantion_table:
 			right_message_expanded += right_message[index]
-
-		#print(right_message_expanded)
 
 		#Xor round key with expanded right message
 		right_message_expanded = fixedlen_xor(round_key, right_message_expanded)
 		
-		#Convert into sbox input
+		#Convert right key into 6bit sbox inputs
 		sbox_inputs = to_blocks(right_message_expanded, 6)
-		#print(sbox_inputs)
 
 		#Do sbox subsitution
 		for sbox_index, sbox_input in enumerate(sbox_inputs):
-			#Generate row and colimn from input data
+			#Generate row and coulmn from input data
+			#Row is the first and last bit of the 6bit input
 			row_num = int(sbox_input[0] + sbox_input[-1], 2)
+			#Comumn is the second through fifth bit of the 6bit input
 			column_num = int(sbox_input[1:5], 2)
-			#print(row_num, column_num)
 
-			#Do sbox sub and append it
+			#Do sbox subistution with the correct sub index and round and column index
 			s_box_sub += "{0:>04b}".format(self.sbox[sbox_index][row_num*16 + column_num])
-
-		
 
 		#Do final permutation on sbox output
 		for index in self.sbox_perm:
@@ -114,9 +110,8 @@ class DES():
 
 	def _encrypt_message_chunk(self, message_chunk):
 		output_chunk = ""
-		#print(message_chunk)
 
-		#Do message Permentation
+		#Do Permentation on the block of the plaintext message
 		for index in self.inital_perm:
 			output_chunk += message_chunk[index]
 
@@ -128,38 +123,27 @@ class DES():
 			#Backup the previous right message
 			right_message_copy = right_message
 
-			#Do Fisal function
+			#Do the Round opperation with the round key
 			tmp = self._round_opperation(round_key, right_message)
-			#print(tmp)
 
-			#Set Right message
+			#Set Right message to the xor of the round opperation and the left message
 			right_message = fixedlen_xor(left_message, tmp)
-
-			#print("R: {}".format(right_message))
 
 			#Set the left message to the old right message
 			left_message = right_message_copy
 
-			#print("L: {}".format(left_message))
-
-
-		#Join the message parts together with swaping right and left side
+		#Join the message parts together but swap the left and the right side
 		full_message = right_message + left_message
 		output_chunk = ""
 
-		#print(full_message)
-
-		#Do final Permutaiton
+		#Do final Permutaiton before the data is outputed
 		for index in self.final_permutation:
 			output_chunk += full_message[index]
-
-		#print(output_chunk)
 
 		return int_to_bytes(int(output_chunk, 2))
 
 	def encrypt(self, message):
 		binary_message = "".join(["{0:>08b}".format(int(x)) for x in message])
-
 		output_message = b""
 		
 		#Opperate on each of the 64 byte chunks
@@ -169,6 +153,7 @@ class DES():
 		return output_message
 
 	def encrypt_3(self, message):
+		#Break input key into keys for 3DES
 		if len(self.key) == 16:
 			key1 = self.key[:8]
 			key2 = self.key[8:16]
@@ -198,7 +183,8 @@ class DES():
 		binary_message = "".join(["{0:>08b}".format(int(x)) for x in message])
 		output_message = b""
 
-		#Reverse the subkeys for Decryption
+		#Decryption is the same as encryption but with the subkeys in reverse order. 
+		#Reverse the order of the subkeys
 		self.subkeys.reverse()
 		
 		#Opperate on each of the 64 byte chunks
@@ -208,6 +194,7 @@ class DES():
 		return output_message
 		
 	def decrypt_3(self, message):
+		#Break input key into keys for 3DES
 		if len(self.key) == 16:
 			key1 = self.key[:8]
 			key2 = self.key[8:16]
