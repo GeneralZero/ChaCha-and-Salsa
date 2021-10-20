@@ -1,12 +1,15 @@
 # ChaCha-and-Salsa
 A simple, commented and readable python implementations of 
+**Asymetric Encryption:**
+
+**Symetric Encryption:**
 - ChaCha
 - Salsa
 - XChaCha
 - XSalsa
-- Poly1305
 - DES
 - 3DES
+**Hash Functions:**
 - MD2
 - MD4
 - MD5
@@ -16,6 +19,15 @@ A simple, commented and readable python implementations of
 - Blake (Blake224, Blake256, Blake384, Blake512)
 - Blake2 (Blake2b, Blake2s)
 - Gimli Hash Function
+- 
+**Key Derivation:**
+
+**Message Authentication Cods:**
+- Poly1305
+- 
+**Signatures:**
+
+
 
 While these should not be used in real world applications. Hopefully the simple implimenation and comments should let people under stand the flow of the program and how each of the implimenations work.
 
