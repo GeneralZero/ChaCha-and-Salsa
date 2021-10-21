@@ -1,14 +1,6 @@
 import hashlib
-
-def fixedlen_xor(input1, input2):
-	assert(len(input1) == len(input2))
-	return bytes([input1[i] ^ input2[i] for i in range(len(input1))])
-
-def int_to_bytes_length(i_data, length, be=True):
-	if be:
-		return (i_data).to_bytes(length, byteorder='big')
-	else:
-		return (i_data).to_bytes(length, byteorder='little')
+from cryptopals_lib import fixedlen_xor, int_to_bytes_length
+from hmac import hmac
 
 def hmac(key, message, hash_function):
 	#Get hash_function block_size
