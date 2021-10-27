@@ -32,28 +32,29 @@ class Scrypt():
 
 		#Populate the Memory buffer from the input buffer
 		self.memory_buffer[:block_size] = buffer[index_from: index_from + block_size]
-		#print(self.memory_buffer)
 
 		#Mix the memory buffer and update the itteration buffer
 		for i in range(self.itterations):
 			index_to = i * block_size
 			self.itter_buffer[index_to:index_to + block_size] = self.memory_buffer[:block_size]
 
-			#Do a Block mix
+			#Do a Block mix on the memory_buffer
 			self.memory_buffer = self._block_mix(self.memory_buffer)
 
-		#
+		#Part 2 of Mixing ???
 		for i in range(self.itterations):
+			#Calculate the staring index from a static offset in the memory_buffer
+			#This memory buffer is always changing so does the start_index
 			start_index = self.memory_buffer[(2 * self.memory_cost -1) << 4] & (self.itterations -1)
 
+			#Select a part of the itteration buffer and XOR a block into the memory buffer
 			for j in range(block_size):
 				self.memory_buffer[j] ^= self.itter_buffer[(start_index * block_size) + j]
 
-			#Do a Block mix
+			#Do a Block mix on the memory_buffer
 			self.memory_buffer = self._block_mix(self.memory_buffer)
 
-		#print(self.memory_buffer)
-
+		#Copy the first block of the memory buffer to the output buffer at the round offset
 		buffer[index_from:index_from + block_size] = self.memory_buffer[:block_size]
 
 		return buffer
@@ -61,31 +62,35 @@ class Scrypt():
 	def _block_mix(self, buffer):
 		start_index = (2 * self.memory_cost - 1) << 4
 
+		#Create a smaller temp buffer for the salsa rounds
 		temp = buffer[start_index:start_index+16]
 
+		#Actual Block Mix with salsa key schedule algorithum with 8 rounds
 		for i in range(2*self.memory_cost):
-
+			#XOR the buffer block baised on the index number
 			for j in range(16):
 				temp[j] ^= buffer[(i <<4) + j]
 
-			#Salsa round
+			#Salsa round with the temp buffer
 			temp = salsa_key_schedule(temp, rounds=8)
 
-			#Choose to replace in buffer
+			#Copy the temp buffer to the output buffer
 			index_to = (self.memory_cost << 5) + (i << 4)
 			buffer[index_to:index_to+16] = temp[:16]
 
 
-		#Copy Blocks arround
+		#Copy Blocks around
 		for i in range(self.memory_cost): 
 			index_from = (self.memory_cost + i) << 5
 			index_to = i << 4
+			#Copy a block from a later point in the buffer to a the ith block
 			buffer[index_to:index_to + 16] = buffer[index_from:index_from + 16]
 
-
+		#Copy Blocks around again
 		for i in range(self.memory_cost):
 			index_from = ((self.memory_cost + i) << 5) + 16
 			index_to = (self.memory_cost + i) << 4
+			#Copy a block from a later point in the buffer to a earlyer buffer
 			buffer[index_to:index_to + 16] = buffer[index_from:index_from + 16]
 
 		return buffer
@@ -98,7 +103,7 @@ class Scrypt():
 		else:
 			self.salt = salt
 
-		#???
+		#Initalize the buffer using a single sha256-pbkdf2
 		buffer = pbkdf2(self.password, self.salt, itterations=1, keylength=((self.parallel_cost*self.memory_cost)<< 7), hashobj=hashlib.sha256)
 		int_buffer = bytes_to_intarray(buffer, 4,  byte_order="little")
 
@@ -106,6 +111,7 @@ class Scrypt():
 		for round_idx in range(self.parallel_cost):
 			int_buffer = self._smix(int_buffer, round_num=round_idx)
 
+		#Convert Ints back to byte string
 		buffer = intarray_to_bytes(int_buffer, 4, byte_order="little")
 
 		return pbkdf2(self.password, buffer, itterations=1, keylength=self.keylength, hashobj=hashlib.sha256)
