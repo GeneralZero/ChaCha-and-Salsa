@@ -37,8 +37,8 @@ A simple, commented and readable python implementations of
 - HKDF [TODO]
 - PBKDF
 - PBKDF2
-- Scrypt [TODO]
-- 
+- Scrypt 
+
 **Message Authentication Cods:**
 - CMAC
 - CBC Mac
