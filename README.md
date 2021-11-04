@@ -55,7 +55,7 @@ A simple, commented and readable python implementations of
 - ECDSA [TODO]
 
 **Key Exchange:**
-- DH [TODO]
+- DH
 - ECDH [TODO]
 
 
