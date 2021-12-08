@@ -1,7 +1,7 @@
 from cryptopals_lib import *
 
 class Blake2(object):
-	def __init__(self, version=256, key=None, salt=None, personalization=None):
+	def __init__(self, version=256, key=None, salt=None, personalization=None, output_size=None):
 		self.permutations = [
 			[ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15],
 			[14,10, 4, 8, 9,15,13, 6, 1,12, 0, 2,11, 7, 5, 3],
@@ -28,7 +28,7 @@ class Blake2(object):
 		self.current_length = 0
 		self.xor_block = False
 
-		self.__select_version(version)
+		self.__select_version(version, output_size)
 
 		#Copy the Buffers in to the IV array
 		self.iv = self.buffers[:]
@@ -36,11 +36,11 @@ class Blake2(object):
 		#Deal with key, salt and personalization if required
 		if key != None:
 			self.key = bytearray(key[:self.blocksize // 2])
-			self.buffers[0] ^= (0x01010000) | (len(self.key) << 8) | ((self.blocksize // 8) * self.output_size)
+			self.buffers[0] ^= (0x01010000) | (len(self.key) << 8) | self.output_size
 
 		else:
 			self.key = key
-			self.buffers[0] ^= (0x01010000) | ((self.blocksize // 8) * self.output_size)
+			self.buffers[0] ^= (0x01010000) | self.output_size
 
 		if salt != None:
 			self.salt = int(salt[:self.blocksize // 8])
@@ -53,7 +53,7 @@ class Blake2(object):
 			self.buffers[7] ^= asint((self.personalization >> self.blocksize), self.blocksize)
 
 
-	def __select_version(self, version):
+	def __select_version(self, version, output_size):
 		#Blake 2s
 		if version <= 256:
 			self.buffers = [0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
@@ -62,7 +62,10 @@ class Blake2(object):
 			self.rotations = [16,12,8,7]
 			self.blocksize = 32
 			self.rounds = 10
-			self.output_size = version // self.blocksize
+			if output_size == None:
+				self.output_size = version // self.blocksize
+			else:
+				self.output_size = output_size
 
 		#Blake2b
 		else:
@@ -71,7 +74,10 @@ class Blake2(object):
 			self.rotations = [32,24,16,63]
 			self.blocksize = 64
 			self.rounds = 12
-			self.output_size = version // self.blocksize
+			if output_size == None:
+				self.output_size = version // self.blocksize
+			else:
+				self.output_size = output_size
 
 		#raise ValueError("Invalid Blake2 Version {}".format(self.version))
 		
@@ -195,7 +201,7 @@ class Blake2(object):
 
 		#Convert Intagers to Byte string
 		output = b""
-		for x in self.buffers[:self.output_size]:
+		for x in self.buffers[:self.output_size // 8]:
 			output += (x).to_bytes((self.blocksize // 8), byteorder='little')
 
 		return output
@@ -204,16 +210,17 @@ class Blake2(object):
 		return self.hash(message).hex()
 
 if __name__ == '__main__':
-
+	"""
 	print("key = b''")
 	for x in [224, 256, 384, 512]:
-		test = Blake2(x)
-		print(f"BLAKE2s-{x}(\"\"): {test.hash_digest(b'')}")
+		test = Blake2(x, output_size=32)
+		print(f"BLAKE2s-{x}(\"\"): {test.hash_digest(b'test')}")
 	#BLAKE2s-224(""): 1fa1291e65248b37b3433475b2a0dd63d54a11ecc4e3e034e7bc1ef4
 	#BLAKE2s-256(""): 69217a3079908094e11121d042354a7c1f55b6482ca1a51e1b250dfd1ed0eef9
 	#BLAKE2s-384(""): b32811423377f52d7862286ee1a72ee540524380fda1724a6f25d7978c6fd3244a6caf0498812673c5e05ef583825100
 	#BLAKE2s-512(""): 786a02f742015903c6c6fd852552d272912f4740e15847618a86e217f71f5419d25e1031afee585313896444934eb04b903a685b1448b755d56f701afe9be2ce
 
+	
 	print("\nKey = b'test'")
 
 	for x in [224, 256, 384, 512]:
@@ -223,3 +230,10 @@ if __name__ == '__main__':
 	#BLAKE2s-256(""): e97e5a6ee41f36c29634dcddadc6edc7352a950ec5cb7610058ff63ea7bc4b80
 	#BLAKE2s-384(""): d998f718982498f390fb3fab366f3f94eb35d0c22ce9f4b2cfde96eb171072d91f071d6617bce70a21967155ff49a8cc
 	#BLAKE2s-512(""): af007b40b85039c1ac7ca29c4a484e3a614a9fead502fdf5693733ec52d768bc8915b3700a04ae607866141eda16322c9b85b433ccc09f9abd2825c4c23b4f31
+	"""
+	test = Blake2(512, output_size=32)
+	print(f"32: {test.hash_digest(b'test')}")
+
+	test = Blake2(512, output_size=64)
+	print(f"64: {test.hash_digest(b'test')}")
+
