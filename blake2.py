@@ -63,7 +63,7 @@ class Blake2(object):
 			self.blocksize = 32
 			self.rounds = 10
 			if output_size == None:
-				self.output_size = version // self.blocksize
+				self.output_size = version // self.blocksize * 8
 			else:
 				self.output_size = output_size
 
@@ -75,7 +75,7 @@ class Blake2(object):
 			self.blocksize = 64
 			self.rounds = 12
 			if output_size == None:
-				self.output_size = version // self.blocksize
+				self.output_size = version // self.blocksize * 8
 			else:
 				self.output_size = output_size
 
