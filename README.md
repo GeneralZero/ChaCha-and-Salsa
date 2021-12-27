@@ -32,7 +32,7 @@ A simple, commented and readable python implementations of
 - XOODOO [TODO]
 
 **Key Derivation:**
-- Argon [TODO]
+- Argon2 
 - Double Ratchet [TODO]
 - HKDF [TODO]
 - PBKDF
