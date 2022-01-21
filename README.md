@@ -26,6 +26,7 @@ A simple, commented and readable python implementations of
 - MD4
 - MD5
 - RC4
+- RIPEMD-160
 - SHA1
 - SHA2 (SHA224, SHA256, SHA384, SHA512)
 - SHA3 (SHA3-224, SHA3-256, SHA3-384, SHA3-512, SHAKE-128, SHAKE-256, Keccak-224, Keccak-256, Keccak-384, Keccak-512)
