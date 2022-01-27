@@ -3,7 +3,7 @@ A simple, commented and readable python implementations of
 
 **Asymetric Encryption:**
 - Elgamal
-- ECC [TODO]
+- ECC (ECIES)
 
 **Symetric Encryption:**
 - AES
@@ -57,10 +57,11 @@ A simple, commented and readable python implementations of
 **Signatures:**
 - DSA
 - ECDSA [TODO]
+- EdDSA [TODO]
 
 **Key Exchange:**
 - DH
-- ECDH [TODO]
+- ECDH
 
 
 While these should not be used in real world applications. Hopefully the simple implimenation and comments should let people under stand the flow of the program and how each of the implimenations work.
