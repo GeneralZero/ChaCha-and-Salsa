@@ -55,7 +55,7 @@ A simple, commented and readable python implementations of
 - VMAC [TODO]
 
 **Signatures:**
-- DSA [TODO]
+- DSA
 - ECDSA [TODO]
 
 **Key Exchange:**
