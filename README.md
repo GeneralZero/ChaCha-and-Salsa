@@ -48,12 +48,7 @@ A simple, commented and readable python implementations of
 - CBC Mac
 - GMAC
 - HMAC
-- KMAC [TODO]
-- OMAC [TODO]
 - Poly1305
-- UMAC [TODO]
-- VMAC [TODO]
-
 **Signatures:**
 - DSA
 - ECDSA [TODO]
