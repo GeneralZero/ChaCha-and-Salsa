@@ -30,12 +30,15 @@ A simple, commented and readable python implementations of
 - SHA1
 - SHA2 (SHA224, SHA256, SHA384, SHA512)
 - SHA3 (SHA3-224, SHA3-256, SHA3-384, SHA3-512, SHAKE-128, SHAKE-256, Keccak-224, Keccak-256, Keccak-384, Keccak-512)
-- XOODOO [TODO]
+- XOODOO [TODO] 
+- Whirlpool [TODO]
+- Rumba20 [TODO]
+- SipHash [TODO]
 
 **Key Derivation:**
 - Argon2 
 - Double Ratchet [TODO]
-- HKDF [TODO]
+- HKDF
 - PBKDF
 - PBKDF2
 - Scrypt 
