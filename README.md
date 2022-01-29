@@ -52,8 +52,8 @@ A simple, commented and readable python implementations of
 
 **Signatures:**
 - DSA
-- ECDSA [TODO]
-- EdDSA [TODO]
+- ECDSA
+- EdDSA
 
 **Key Exchange:**
 - DH
