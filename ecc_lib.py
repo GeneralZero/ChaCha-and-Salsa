@@ -523,7 +523,7 @@ class MontgomeryCurve(Curve):
 	def find_points_by_x(self, x):
 		# Rearrange the Curve Formula to get y. y = ((x^3 + ax^2 + x)/b)^1/2
 		y_squared = ((x **3 + self.a * x **2 + x) % self.prime_mod * modinv(self.b, self.prime_mod)) % self.prime_mod
-		y = modsqrt(y_squared, self.prime_mod)
+		y = modular_sqrt(y_squared, self.prime_mod)
 		return y
 
 
