@@ -9,9 +9,6 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 import json, os, base64
 
-
-
-
 class Signal_Server(object):
 	"""docstring for Signal_Server"""
 	def __init__(self):
@@ -21,7 +18,6 @@ class Signal_Server(object):
 		self.onetime_database = {}
 		self.info = b"Signal_Server"
 	
-
 	def registerUser(self, username, idenity_key, idenity_key_sign):
 		self.idenity_database[username] = X448PublicKey.from_public_bytes(idenity_key)
 		self.idenity_database_sign[username] = Ed448PublicKey.from_public_bytes(idenity_key_sign)
@@ -60,12 +56,15 @@ class Signal_Server(object):
 		
 class Signal_User(object):
 	"""docstring for Signal_User"""
-	def __init__(self, username):
+	def __init__(self, username, signal_server):
 		self.username = username
 		self.idenity_private_key = None
 		self.idenity_private_key_sign = None
 		self.private_pre_key = None
 		self.one_time_private_keys = []
+
+		#Add the Signal Server to the user so You dont have to pass it through to all of the functions
+		self.signal_server = signal_server
 
 		self._generateKeys()
 
@@ -89,28 +88,27 @@ class Signal_User(object):
 		for x in range(5):
 			self.one_time_private_keys.append(X448PrivateKey.generate())
 
-	def registerUser(self, signal_server):
-		signal_server.registerUser(self.username, self.idenity_private_key.public_key().public_bytes_raw(), self.idenity_private_key_sign.public_key().public_bytes_raw())
-
+	def registerUser(self):
+		self.signal_server.registerUser(self.username, self.idenity_private_key.public_key().public_bytes_raw(), self.idenity_private_key_sign.public_key().public_bytes_raw())
 
 	def generateEphemeralKey(self):
 		self.ephemeral_key = X448PrivateKey.generate()
 
-	def send_PreKeyToSignalServer(self, signal_server):
+	def send_PreKeyToSignalServer(self):
 		#Get Public Key
 		public_Pre_Key = self.private_pre_key.public_key() 
 
 		signature = self.idenity_private_key_sign.sign(public_Pre_Key.public_bytes_raw())
 
 		#Send to Server
-		signal_server.updateUserPreKey(self.username, public_Pre_Key.public_bytes_raw(), signature)
+		self.signal_server.updateUserPreKey(self.username, public_Pre_Key.public_bytes_raw(), signature)
 
-	def generateDH1_sender(self, signal_server, username):
+	def generateDH1_sender(self, username):
 		#Get Destination User's Signed Public Key
 
-		dst_idenity_sign_key = Ed448PublicKey.from_public_bytes(signal_server.getUsersIdenitySigningKey(username))
+		dst_idenity_sign_key = Ed448PublicKey.from_public_bytes(self.signal_server.getUsersIdenitySigningKey(username))
 
-		dst_prekey_and_signature = signal_server.getUsersPreKey(username)
+		dst_prekey_and_signature = self.signal_server.getUsersPreKey(username)
 
 		#Check that the signature is correct for that key
 		if dst_idenity_sign_key.verify(dst_prekey_and_signature["signature"], dst_prekey_and_signature["key"]):
@@ -121,21 +119,21 @@ class Signal_User(object):
 		dst_prekey = X448PublicKey.from_public_bytes(dst_prekey_and_signature["key"])
 		return self.idenity_private_key.exchange(dst_prekey)
 
-	def generateDH2_sender(self, signal_server, username):
+	def generateDH2_sender(self, username):
 		#Get Destination User's Signed Public Key
-		dst_idenity_key = X448PublicKey.from_public_bytes(signal_server.getUsersIdenityKey(username))
+		dst_idenity_key = X448PublicKey.from_public_bytes(self.signal_server.getUsersIdenityKey(username))
 
 		#Generate Ephemeral Key for the rest of the Key generation
 		self.generateEphemeralKey()
 
 		return self.ephemeral_key.exchange(dst_idenity_key)
 
-	def generateDH3_sender(self, signal_server, username):
+	def generateDH3_sender(self, username):
 		#Get Destination User's Signed Public Key
 
-		dst_idenity_sign_key = Ed448PublicKey.from_public_bytes(signal_server.getUsersIdenitySigningKey(username))
+		dst_idenity_sign_key = Ed448PublicKey.from_public_bytes(self.signal_server.getUsersIdenitySigningKey(username))
 
-		dst_prekey_and_signature = signal_server.getUsersPreKey(username)
+		dst_prekey_and_signature = self.signal_server.getUsersPreKey(username)
 
 		#Check that the signature is correct for that key
 		if dst_idenity_sign_key.verify(dst_prekey_and_signature["signature"], dst_prekey_and_signature["key"]):
@@ -146,22 +144,41 @@ class Signal_User(object):
 		dst_prekey = X448PublicKey.from_public_bytes(dst_prekey_and_signature["key"])
 		return self.ephemeral_key.exchange(dst_prekey)
 
-	def generateDH4_sender(self, signal_server, username):
+	def generateDH4_sender(self, username):
 		#Get Destination User's Signed Public Key
-		dst_idenity_key = X448PublicKey.from_public_bytes(signal_server.getUsersIdenityKey(username))
-		dst_one_time_key = X448PublicKey.from_public_bytes(signal_server.getUserOneTimeKey(username))
+		dst_idenity_key = X448PublicKey.from_public_bytes(self.signal_server.getUsersIdenityKey(username))
+		dst_one_time_key = X448PublicKey.from_public_bytes(self.signal_server.getUserOneTimeKey(username))
 
 		return self.ephemeral_key.exchange(dst_one_time_key)
 
 
-	def send_OneTimeKeysToSignalServer(self, signal_server):
+	def send_OneTimeKeysToSignalServer(self):
 		for key in self.one_time_private_keys:
 			key_bytes = key.public_key().public_bytes_raw()
-			signal_server.addOneTimePreKey(self.username, key_bytes)
+			self.signal_server.addOneTimePreKey(self.username, key_bytes)
+
+	def generateSecretKey_sender(self, username):
+		#Generate the 4 DH keys and generate secret
+		# DH1 = Alice Idenity Key, Bob's Signed Pre_key
+		dh1 = self.generateDH1_sender(username)
+
+
+		#DH2 = Alice's Ephemeral Key, Bob's Idenity Key
+		#Alice Generates a new Key for this exchange on the fly
+		dh2 = alice.generateDH2_sender(username)
+
+
+		#DH3 = Alice's Ephemeral Key, Bob's Signed Pre_key
+		dh3 = alice.generateDH3_sender(username)
+
+
+		#DH4 = Alice's Ephemeral Key, Bob's One Time Key
+		dh4 = alice.generateDH4_sender(username)
+
+		return self.generateSecretKey(dh1, dh2, dh3, dh4)
+
 
 	def generateSecretKey(self, dh1, dh2, dh3, dh4):
-		#I Dont know where this is used???
-
 		if self.idenity_private_key is X448PrivateKey:
 			pre_hash_bytes = 57*b"\xFF"
 			hash_obj = PBKDF2HMAC(algorithm=hashes.SHA512(), length=64, salt=(64*b"\x00"), iterations=480000)
@@ -172,15 +189,15 @@ class Signal_User(object):
 		secret_key = hash_obj.derive(pre_hash_bytes + dh1 + dh2 + dh3 + dh4)
 		return secret_key
 
-	def AADAndEncryptMessage(self, secret_key, message, signal_server, username):
-		dst_idenity_key = signal_server.getUsersIdenityKey(username)
+	def AADAndEncryptMessage(self, secret_key, message, username):
+		dst_idenity_key = self.signal_server.getUsersIdenityKey(username)
 
 		# Dest Ident Key, Source Ident Key, dest username, source username, server info
 		aad = {"src_idenity_key": base64.b64encode(self.idenity_private_key.public_key().public_bytes_raw()).decode('ascii') , 
 		"src_username": self.username, "src_ephemeral_key": base64.b64encode(self.ephemeral_key.public_key().public_bytes_raw()).decode('ascii'),
-		"dst_idenity_key": base64.b64encode(dst_idenity_key).decode('ascii'), "dst_username": username, "server_info": signal_server.info.decode('ascii')}
+		"dst_idenity_key": base64.b64encode(dst_idenity_key).decode('ascii'), "dst_username": username, "server_info": self.signal_server.info.decode('ascii')}
 
-		print(aad)
+		#print(aad)
 		aad_bytes = json.dumps(aad).encode('ascii')
 
 		aesgcm = AESGCM(secret_key)
@@ -232,46 +249,29 @@ if __name__ == '__main__':
 	signal_server = Signal_Server()
 
 	#Generate Users
-	alice = Signal_User("alice")
-	bob = Signal_User("bob")
+	alice = Signal_User("alice", signal_server)
+	bob = Signal_User("bob", signal_server)
 
-	#User Setups
-	alice.registerUser(signal_server)
-	alice.send_PreKeyToSignalServer(signal_server)
-	alice.send_OneTimeKeysToSignalServer(signal_server)
+	#Setup Users with the server
+	alice.registerUser()
+	alice.send_PreKeyToSignalServer()
+	alice.send_OneTimeKeysToSignalServer()
 
-	bob.registerUser(signal_server)
-	bob.send_PreKeyToSignalServer(signal_server)
-	bob.send_OneTimeKeysToSignalServer(signal_server)
+	bob.registerUser()
+	bob.send_PreKeyToSignalServer()
+	bob.send_OneTimeKeysToSignalServer()
 
 
 	#Setup Done lets send a message
 	#Assume that Bob is offline Alice can only exchange messages with the server
 
-	# DH1 = Alice Idenity Key, Bob's Signed Pre_key
-	#Alice Gets the 
-	dh1_a = alice.generateDH1_sender(signal_server, "bob")
-
-
-	#DH2 = Alice's Ephemeral Key, Bob's Idenity Key
-	#Alice Generates a new Key for this exchange on the fly
-	dh2_a = alice.generateDH2_sender(signal_server, "bob")
-
-
-	#DH3 = Alice's Ephemeral Key, Bob's Signed Pre_key
-	dh3_a = alice.generateDH3_sender(signal_server, "bob")
-
-
-	#DH4 = Alice's Ephemeral Key, Bob's One Time Key
-	dh4_a = alice.generateDH4_sender(signal_server, "bob")
-
-
 	#Concat Secrets and feed through a KDF
 	# Salt is either 57*b"\xFF" for X448 or 32*b"\xFF" for X25519
-	secret_key = alice.generateSecretKey(dh1_a, dh2_a, dh3_a, dh4_a)
+	secret_key = alice.generateSecretKey_sender("bob")
 
 	#Alice Deletes her Ephemeral Private Key and DH ouputs
-	encrypted_message = alice.AADAndEncryptMessage(secret_key, b"Test Message 12345", signal_server, "bob")
+	encrypted_message = alice.AADAndEncryptMessage(secret_key, b"Test Message 12345", "bob")
+	print(f"Message over the Wire: {encrypted_message}")
 
 
 	####### Time for Bob to get message
