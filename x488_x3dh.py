@@ -103,54 +103,6 @@ class Signal_User(object):
 		#Send to Server
 		self.signal_server.updateUserPreKey(self.username, public_Pre_Key.public_bytes_raw(), signature)
 
-	def generateDH1_sender(self, username):
-		#Get Destination User's Signed Public Key
-
-		dst_idenity_sign_key = Ed448PublicKey.from_public_bytes(self.signal_server.getUsersIdenitySigningKey(username))
-
-		dst_prekey_and_signature = self.signal_server.getUsersPreKey(username)
-
-		#Check that the signature is correct for that key
-		if dst_idenity_sign_key.verify(dst_prekey_and_signature["signature"], dst_prekey_and_signature["key"]):
-			print("[-] Signature does't match the Prekey. Either Bad Signature, Wrong Key, wrong username")
-			return False
-		
-		#Now that we have checked that the server did not give us the wrong user key Lets continue
-		dst_prekey = X448PublicKey.from_public_bytes(dst_prekey_and_signature["key"])
-		return self.idenity_private_key.exchange(dst_prekey)
-
-	def generateDH2_sender(self, username):
-		#Get Destination User's Signed Public Key
-		dst_idenity_key = X448PublicKey.from_public_bytes(self.signal_server.getUsersIdenityKey(username))
-
-		#Generate Ephemeral Key for the rest of the Key generation
-		self.generateEphemeralKey()
-
-		return self.ephemeral_key.exchange(dst_idenity_key)
-
-	def generateDH3_sender(self, username):
-		#Get Destination User's Signed Public Key
-
-		dst_idenity_sign_key = Ed448PublicKey.from_public_bytes(self.signal_server.getUsersIdenitySigningKey(username))
-
-		dst_prekey_and_signature = self.signal_server.getUsersPreKey(username)
-
-		#Check that the signature is correct for that key
-		if dst_idenity_sign_key.verify(dst_prekey_and_signature["signature"], dst_prekey_and_signature["key"]):
-			print("[-] Signature does't match the Prekey. Either Bad Signature, Wrong Key, wrong username")
-			return False
-		
-		#Now that we have checked that the server did not give us the wrong user key Lets continue
-		dst_prekey = X448PublicKey.from_public_bytes(dst_prekey_and_signature["key"])
-		return self.ephemeral_key.exchange(dst_prekey)
-
-	def generateDH4_sender(self, username):
-		#Get Destination User's Signed Public Key
-		dst_idenity_key = X448PublicKey.from_public_bytes(self.signal_server.getUsersIdenityKey(username))
-		dst_one_time_key = X448PublicKey.from_public_bytes(self.signal_server.getUserOneTimeKey(username))
-
-		return self.ephemeral_key.exchange(dst_one_time_key)
-
 
 	def send_OneTimeKeysToSignalServer(self):
 		for key in self.one_time_private_keys:
@@ -158,22 +110,41 @@ class Signal_User(object):
 			self.signal_server.addOneTimePreKey(self.username, key_bytes)
 
 	def generateSecretKey_sender(self, username):
+		#Lets get the required Data from the servers and check signatures
+		dst_idenity_key = X448PublicKey.from_public_bytes(self.signal_server.getUsersIdenityKey(username))
+
+		dst_idenity_sign_key = Ed448PublicKey.from_public_bytes(self.signal_server.getUsersIdenitySigningKey(username))
+		dst_prekey_and_signature = self.signal_server.getUsersPreKey(username)
+		dst_prekey = X448PublicKey.from_public_bytes(dst_prekey_and_signature["key"])
+		dst_signature = dst_prekey_and_signature["signature"]
+
+		#Generate Ephemeral Key for the rest of the Key generation
+		self.generateEphemeralKey()
+
+		dst_one_time_key = X448PublicKey.from_public_bytes(self.signal_server.getUserOneTimeKey(username))
+
+		#Check that the signature is correct for that key
+		if dst_idenity_sign_key.verify(dst_signature, dst_prekey_and_signature["key"]):
+			print("[-] Signature does't match the Prekey. Either Bad Signature, Wrong Key, wrong username")
+			return False
+
 		#Generate the 4 DH keys and generate secret
 		# DH1 = Alice Idenity Key, Bob's Signed Pre_key
-		dh1 = self.generateDH1_sender(username)
+		#Now that we have checked that the server did not give us the wrong user key Lets continue
+		dh1 = self.idenity_private_key.exchange(dst_prekey)
 
 
 		#DH2 = Alice's Ephemeral Key, Bob's Idenity Key
 		#Alice Generates a new Key for this exchange on the fly
-		dh2 = alice.generateDH2_sender(username)
+		dh2 = self.ephemeral_key.exchange(dst_idenity_key)
 
 
 		#DH3 = Alice's Ephemeral Key, Bob's Signed Pre_key
-		dh3 = alice.generateDH3_sender(username)
+		dh3 = self.ephemeral_key.exchange(dst_prekey)
 
 
 		#DH4 = Alice's Ephemeral Key, Bob's One Time Key
-		dh4 = alice.generateDH4_sender(username)
+		dh4 = self.ephemeral_key.exchange(dst_one_time_key)
 
 		return self.generateSecretKey(dh1, dh2, dh3, dh4)
 
@@ -223,12 +194,10 @@ class Signal_User(object):
 		#Generate DH2
 		#DH2 = Src Ephemeral Key, Dst Idenity Key
 		dh2 = self.idenity_private_key.exchange(src_ephemeral_key)
-		
 
 		#Generate DH3
 		#DH3 = Src Ephemeral Key, Dst Signed Pre_key
 		dh3 = self.private_pre_key.exchange(src_ephemeral_key)
-		
 
 		#Generate DH4
 		#DH4 = Src Ephemeral Key, Dst One Time Key
@@ -237,7 +206,6 @@ class Signal_User(object):
 
 		#Generate Secret Key
 		secret_key = self.generateSecretKey(dh1, dh2, dh3, dh4)
-
 
 		#Decrypt and Verify Cypher text
 		aesgcm = AESGCM(secret_key)
