@@ -74,14 +74,11 @@ class Signal_User(object):
 		#The Ed448 Private Key is 57 bits long while the x448 is 56 bits long
 		#https://crypto.stackexchange.com/questions/99974/curve448-can-ed448-key-material-be-reused-for-x448
 		# So we generate the x448 from the Ed448 key
-		digest = hashes.Hash(hashes.SHAKE256(57))
+		digest = hashes.Hash(hashes.SHAKE256(56))
 		digest.update(self.idenity_private_key_sign.private_bytes_raw())
 		x488_key = digest.finalize()
 		#print(x488_key)
 		self.idenity_private_key = Ed448PrivateKey.from_private_bytes(x488_key)
-
-
-		self.idenity_private_key = X448PrivateKey.generate()
 		self.private_pre_key = X448PrivateKey.generate()
 
 		#Lets Generate 5 Prekeys
