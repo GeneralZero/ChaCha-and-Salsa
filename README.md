@@ -37,7 +37,7 @@ A simple, commented and readable python implementations of
 
 **Key Derivation:**
 - Argon2 
-- Double Ratchet [TODO]
+- Double Ratchet
 - HKDF
 - PBKDF
 - PBKDF2
