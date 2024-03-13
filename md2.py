@@ -46,6 +46,7 @@ class MD2(object):
 
 			# Calculate checksum of block using each byte of the block
 			for byte_num, byte in enumerate(block):
+				#checksum_byte = self.sbox[byte ^ checksum_byte] Old md2 hash before RFC Eratta. https://www.rfc-editor.org/errata/eid555
 				checksum_byte = checksum[byte_num] ^ self.sbox[byte ^ checksum_byte]
 				checksum[byte_num] = checksum_byte
 
