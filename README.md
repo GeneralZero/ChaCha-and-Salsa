@@ -14,6 +14,7 @@ A simple, commented and readable python implementations of
 - XSalsa
 - DES
 - 3DES
+- TEA/XTEA
 
 **Hash Functions:**
 
