@@ -17,7 +17,6 @@ A simple, commented and readable python implementations of
 - TEA/XTEA
 
 **Hash Functions:**
-- Bcrypt
 - Blake (Blake224, Blake256, Blake384, Blake512)
 - Blake2 (Blake2b, Blake2s)
 - Blake3 [TODO]
@@ -37,13 +36,14 @@ A simple, commented and readable python implementations of
 
 **Key Derivation:**
 - Argon2 
+- Bcrypt
 - Double Ratchet
 - HKDF
 - PBKDF
 - PBKDF2
 - Scrypt 
 
-**Message Authentication Cods:**
+**Message Authentication Codes (MAC):**
 - CMAC
 - CBC Mac
 - GMAC
