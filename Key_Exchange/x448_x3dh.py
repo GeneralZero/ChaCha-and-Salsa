@@ -17,9 +17,8 @@ class Signal_Server(object):
 		self.preKey_database = {}
 		self.onetime_database = {}
 		self.info = b"Signal_Server"
-	
+
 	def registerUser(self, username, idenity_key, idenity_key_sign):
-		print(idenity_key, len(idenity_key))
 		self.idenity_database[username] = X448PublicKey.from_public_bytes(idenity_key)
 		self.idenity_database_sign[username] = Ed448PublicKey.from_public_bytes(idenity_key_sign)
 
@@ -52,9 +51,9 @@ class Signal_Server(object):
 		if username not in self.onetime_database:
 			self.onetime_database[username] = []
 		self.onetime_database[username].append(keys_bytes)
-			
 
-		
+
+
 class Signal_User(object):
 	"""docstring for Signal_User"""
 	def __init__(self, username, signal_server):
@@ -71,7 +70,7 @@ class Signal_User(object):
 
 	def _generateKeys(self):
 		self.idenity_private_key_sign = Ed448PrivateKey.generate()
-		self.idenity_private_key = Ed448PrivateKey.from_private_bytes(self.idenity_private_key_sign.private_bytes_raw())	
+		self.idenity_private_key = X448PrivateKey.generate()
 		self.private_pre_key = X448PrivateKey.generate()
 
 		#Lets Generate 5 Prekeys
@@ -86,7 +85,7 @@ class Signal_User(object):
 
 	def send_PreKeyToSignalServer(self):
 		#Get Public Key
-		public_Pre_Key = self.private_pre_key.public_key() 
+		public_Pre_Key = self.private_pre_key.public_key()
 
 		signature = self.idenity_private_key_sign.sign(public_Pre_Key.public_bytes_raw())
 
@@ -154,7 +153,7 @@ class Signal_User(object):
 		dst_idenity_key = self.signal_server.getUsersIdenityKey(username)
 
 		# Dest Ident Key, Source Ident Key, dest username, source username, server info
-		aad = {"src_idenity_key": base64.b64encode(self.idenity_private_key.public_key().public_bytes_raw()).decode('ascii') , 
+		aad = {"src_idenity_key": base64.b64encode(self.idenity_private_key.public_key().public_bytes_raw()).decode('ascii') ,
 		"src_username": self.username, "src_ephemeral_key": base64.b64encode(self.ephemeral_key.public_key().public_bytes_raw()).decode('ascii'),
 		"dst_idenity_key": base64.b64encode(dst_idenity_key).decode('ascii'), "dst_username": username, "server_info": self.signal_server.info.decode('ascii')}
 
@@ -234,4 +233,3 @@ if __name__ == '__main__':
 
 	####### Time for Bob to get message
 	print(f"Message Recived: {bob.recieveMessage(encrypted_message)}")
-
