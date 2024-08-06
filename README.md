@@ -3,21 +3,22 @@ A simple, commented and readable python implementations of
 
 **Asymetric Encryption:**
 - [Elgamal](./Asymetric_Encryption/elgamal.py)
-- ECC (ECIES)
+- [ECC (ECIES)](./Asymetric_Encryption/ecies.py)
 
 **Symetric Encryption:**
-- AES
-- Blowfish
-- ChaCha
-- Salsa
-- XChaCha
-- XSalsa
-- DES
-- 3DES
-- TEA/XTEA
+- [AES](./aes_lib.py)
+- [Blowfish](./Symetric_Encryption/blowfish.py)
+- [ChaCha](./Symetric_Encryption/chacha.py#L276)
+- [Salsa](./Symetric_Encryption/chacha.py#L235)
+- [XChaCha](./Symetric_Encryption/chacha.py#L262)
+- [XSalsa](./Symetric_Encryption/chacha.py#L220)
+- [DES](./Symetric_Encryption/des.py)
+- [3DES](./Symetric_Encryption/des.py#158)
+- [TEA](./Symetric_Encryption/tea.py)
+- [XTEA](./Symetric_Encryption/tea.py#35)
 
 **Hash Functions:**
-- Blake (Blake224, Blake256, Blake384, Blake512)
+- [Blake](./Hash_Functions/blake.py) ([Blake224](./Hash_Functions/blake.py#47), [Blake256](./Hash_Functions/blake.py#58), [Blake384](./Hash_Functions/blake.py#69), [Blake512](./Hash_Functions/blake.py#81))
 - Blake2 (Blake2b, Blake2s)
 - Blake3 [TODO]
 - Gimli
