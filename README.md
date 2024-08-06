@@ -17,7 +17,6 @@ A simple, commented and readable python implementations of
 - TEA/XTEA
 
 **Hash Functions:**
-
 - Bcrypt
 - Blake (Blake224, Blake256, Blake384, Blake512)
 - Blake2 (Blake2b, Blake2s)
@@ -34,7 +33,7 @@ A simple, commented and readable python implementations of
 - XOODOO [TODO] 
 - Whirlpool [TODO]
 - Rumba20 [TODO]
-- SipHash [TODO]
+- SipHash
 
 **Key Derivation:**
 - Argon2 
