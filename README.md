@@ -2,7 +2,7 @@
 A simple, commented and readable python implementations of 
 
 **Asymetric Encryption:**
-- Elgamal
+- [Elgamal](./blob/master/Asymetric_Encryption/elgamal.py)
 - ECC (ECIES)
 
 **Symetric Encryption:**
