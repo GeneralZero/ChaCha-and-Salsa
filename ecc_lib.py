@@ -1,5 +1,5 @@
-import random, math
-from cryptopals_lib import is_prime, int_byte_length, secure_rand_between, int_to_bytes, bytes_to_int, bXXencode
+import random, math, secrets
+from cryptopals_lib import is_prime, int_to_bytes, bytes_to_int, bXXencode
 
 #Use Utility Math Functions
 
@@ -79,7 +79,7 @@ def modular_sqrt(n:int, p:int) -> list:
 
 def generate_KeyPair(point):
 	#Generate a random intager 0 < N < Order
-	random_priv_int = secure_rand_between(0, point.curve.order)
+	random_priv_int = secrets.randbelow(point.curve.order)
 
 	#Generate Public 
 	public_point = random_priv_int * point

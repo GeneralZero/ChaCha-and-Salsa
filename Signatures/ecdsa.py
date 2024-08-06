@@ -1,5 +1,7 @@
+import hashlib, sys
+sys.path.append("..")
+
 from ecc_lib import *
-import hashlib
 from cryptopals_lib import bytes_to_int, int_to_bytes
 
 ### ECDSA

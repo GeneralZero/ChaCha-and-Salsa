@@ -1,6 +1,8 @@
 import os, math, random, base64
 
 letter_ranking = b"zqxjkvbpygfwmucldrh snioate"
+b58alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+
 
 class PaddingError(Exception):
 	pass
@@ -215,7 +217,9 @@ def is_prime(possible_prime):
 	if (possible_prime & 1 != 0):
 		#Check primes under 1000
 		for p in lowPrimes:
-			if (possible_prime % p == 0):
+			if p == possible_prime:
+				return True
+			elif (possible_prime % p == 0):
 				return False
 		#Check rabinMiller
 		return rabinMiller(possible_prime)
@@ -240,3 +244,30 @@ def generate_probable_prime(bits=1024):
 		if is_prime(random_int):
 			return random_int
 	raise Exception("Could not generate Prime")
+
+def int_byte_length(i):
+	return (i.bit_length() + 7) // 8
+
+
+def secure_rand_between(bottom, top):
+	sys_random = random.SystemRandom()
+
+	if top >= 0:
+		rand_int = sys_random._randbelow(top)
+
+		while rand_int < bottom:
+			rand_int = sys_random._randbelow(top)
+
+		return rand_int
+
+
+def bXXencode(b, count=58):
+	n = int.from_bytes(b, 'big')
+	chars = []
+	while n:
+		n, i = divmod(n, count)
+		chars.append(b58alphabet[i])
+	# special case handle the leading 0 bytes... ¯\_(ツ)_/¯
+	num_leading_zeros = len(b) - len(b.lstrip(b'\x00'))
+	res = num_leading_zeros * b58alphabet[0] + ''.join(reversed(chars))
+	return res

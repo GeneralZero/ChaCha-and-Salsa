@@ -1,6 +1,8 @@
 from Crypto.PublicKey import DSA
 
-import secrets, hashlib
+import secrets, hashlib, sys
+sys.path.append("..")
+
 from cryptopals_lib import bytes_to_int, int_to_bytes
 
 def gen_random(low, high):
