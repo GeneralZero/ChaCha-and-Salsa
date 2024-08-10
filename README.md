@@ -8,7 +8,7 @@ A simple, commented and readable python implementations of
 **Hash Functions:**
 - [Blake](./Hash_Functions/blake.py) ([Blake224](./Hash_Functions/blake.py#47), [Blake256](./Hash_Functions/blake.py#58), [Blake384](./Hash_Functions/blake.py#69), [Blake512](./Hash_Functions/blake.py#81))
 - Blake2 ([Blake2b](./Hash_Functions/blake2.py#61), [Blake2s](./Hash_Functions/blake2.py#73))
-- Blake3 [TODO]
+- [Blake3](./Hash_Functions/blake3.py)
 - [Gimli](./Hash_Functions/gimli.py)
 - [MD2](./Hash_Functions/md2.py)
 - [MD4](./Hash_Functions/md4.py)
